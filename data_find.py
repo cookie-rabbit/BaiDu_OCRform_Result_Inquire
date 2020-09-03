@@ -1,21 +1,12 @@
 # coding=utf-8
 
-import ast
 import re
 from copy import deepcopy
-from operator import contains
-
-from data_pre_process import PrepareData
-
-ocr_result = {'百度OCR识别所获取数据'}
-
-target = [{'word': '查询数据1', 'direct': 1, 'distance': 0, 'num': 1, 'format': r'',
-           'accuracy': ('like', 0)},
-          {'word': '查询数据2', 'direct': 4, 'distance': 0, 'num': 1, 'format': r'',
-           'accuracy': ('like', 0)}]
 
 
 class DataFind(object):
+    """数据查询与整理"""
+
     @classmethod
     def valid_data(cls, search):
         """
@@ -62,6 +53,7 @@ class DataFind(object):
             infos = []
             direct = 'row' if i.get('direct', 1) in [1, 2] else 'column'
             for j in content:
+
                 word = i.get('word', None)
                 if word is None:
                     raise ValueError('待查询值不能为空')
@@ -70,9 +62,10 @@ class DataFind(object):
                 equal_judge = "j.get('word', '') == word"
                 a = contain_judge if i.get('accuracy', ('like', 0))[0] == 'like' else equal_judge
                 if eval(a):
-                    j.update({'value': [], 'word': word})
-                    j.update(i)
-                    infos.append(j)
+                    res = deepcopy(j)
+                    res.update({'value': [], 'word': word})
+                    res.update(i)
+                    infos.append(res)
                 continue
 
             if infos:
@@ -118,9 +111,3 @@ class DataFind(object):
             value = list(j for j in value if number_rule.match(j))
             i['value'] = value
         return data
-
-
-if __name__ == '__main__':
-    body = PrepareData.pretreatment_body(ocr_result)
-    res = DataFind.data_handle(body, target)
-    print(res)
