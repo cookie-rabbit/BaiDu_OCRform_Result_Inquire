@@ -2,13 +2,14 @@
 
 import re
 from copy import deepcopy
+from operator import contains
 
 
 class DataFind(object):
     """数据查询与整理"""
 
     @classmethod
-    def valid_data(cls, search):
+    def valid_search(cls, search):
         """
         检查待查询字典列表是否符合要求
         :param search: 待查询字典列表
@@ -27,6 +28,10 @@ class DataFind(object):
             i['num'] = int(i.get('num', 1))
             if i['num'] < 1:
                 raise ValueError('元素获取数量不能小于1')
+
+            i['f_type'] = int(i.get('f_type', 0))
+            if i['f_type'] not in [0, 1]:
+                raise ValueError('查询方式必须为0或1')
 
             i['format'] = i.get('format', r'')
 
@@ -63,7 +68,10 @@ class DataFind(object):
                 a = contain_judge if i.get('accuracy', ('like', 0))[0] == 'like' else equal_judge
                 if eval(a):
                     res = deepcopy(j)
-                    res.update({'value': [], 'word': word})
+                    if i.get('f_type'):
+                        res.update({'value': [j.get('word')], 'word': word})
+                    else:
+                        res.update({'value': [], 'word': word})
                     res.update(i)
                     infos.append(res)
                 continue
@@ -99,15 +107,22 @@ class DataFind(object):
         :param search: 待查询字典列表
         :return: 截取，正则化处理后的查询结果
         """
-        valid_search = cls.valid_data(search)
+        valid_search = cls.valid_search(search)
         data = cls.content_handle(content, valid_search)
         print(data)
         for i in data:
             number_rule = re.compile(f'{i.get("format")}')
             try:
-                value = i.get('value')[i.get('distance'):i.get('distance') + i.get('num')]
+                if i.get('f_type'):
+                    value = i.get('value')[0]
+                else:
+                    value = i.get('value')[i.get('distance'):i.get('distance') + i.get('num')]
             except IndexError:
                 value = ''
-            value = list(j for j in value if number_rule.match(j))
+            if i.get('f_type'):
+                value = list(j for j in [value] if number_rule.match(j))
+            else:
+                value = list(j for j in value if number_rule.match(j))
             i['value'] = value
+            i['value'].extend((i['num'] - len(i['value'])) * [''])
         return data
