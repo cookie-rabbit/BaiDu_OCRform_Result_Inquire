@@ -6,7 +6,7 @@ from operator import contains
 
 
 class DataFind(object):
-    """数据查询与整理"""
+    """数据查询与处理"""
 
     @classmethod
     def valid_search(cls, search):
@@ -16,32 +16,41 @@ class DataFind(object):
         :return: 检查后结果
         """
         for i in search:
-            if i.get('word', None) is None:
+            if not str(i.get('word', None)).strip():
                 raise ValueError('待查询值不能为空')
 
-            if i.get('direct', None) is None:
-                raise ValueError('数据查询方向不能为空')
-            i['distance'] = int(i.get('distance', 0))
+            if i.get('direct', None) not in [1, 2, 3, 4]:
+                raise ValueError('数据查询方向必须为1,2,3,4中的一个')
+
+            try:
+                i['distance'] = int(i.get('distance', 0))
+            except TypeError:
+                raise TypeError('元素查询距离不能必须为数字')
             if i['distance'] < 0:
                 raise ValueError('元素查询距离不能小于0')
 
-            i['num'] = int(i.get('num', 1))
+            try:
+                i['num'] = int(i.get('num', 1))
+            except TypeError:
+                raise TypeError('元素获取数量必须为数字')
             if i['num'] < 1:
                 raise ValueError('元素获取数量不能小于1')
 
-            i['f_type'] = int(i.get('f_type', 0))
-            if i['f_type'] not in [0, 1]:
+            if i.get('f_type', 0) not in [0, 1]:
                 raise ValueError('查询方式必须为0或1')
 
             i['format'] = i.get('format', r'')
 
             i['accuracy'] = i.get('accuracy', ('like', 0))
             if not isinstance(i['accuracy'], tuple):
-                raise ValueError('匹配精度必须为数组')
+                raise TypeError('匹配精度字段必须为元组')
             if len(i['accuracy']) != 2:
-                raise ValueError('匹配精度元祖长度必须为2')
-            if i['accuracy'][0] not in ['like', 'equal'] or int(i['accuracy'][1]) < 0:
-                raise ValueError('匹配精度模式必须为 like, equal 中的一个，且定位数必须大于0')
+                raise ValueError('匹配精度字段的元祖长度必须为2')
+            try:
+                if i['accuracy'][0] not in ['like', 'equal'] or int(i['accuracy'][1]) < 0:
+                    raise ValueError('匹配精度字段中的匹配模式必须为 like, equal 中的一个，且定位数必须大于0')
+            except ValueError:
+                raise ValueError('匹配精度字段中的定位数必须为一个大于0的正整数')
 
         return search
 
